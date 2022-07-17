@@ -1,3 +1,4 @@
+import os
 from pydantic_sqlalchemy import sqlalchemy_to_pydantic
 from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer
@@ -7,10 +8,15 @@ from logging import getLogger
 
 import orjson
 
+#uri = "postgresql://hadus:toor@localhost:5432/newsbot_db"
+uri = os.getenv("DATABASE_URL")
+print(uri)
+if uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://")
 
 
 class DBSetup:
-    DB_URL =  "postgres://hadus:toor@localhost:5432/newsbot_db"
+    DB_URL =  uri
     BASE = declarative_base()
     ENGINE = create_engine(DB_URL)
     
