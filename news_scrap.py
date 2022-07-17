@@ -69,9 +69,11 @@ def read_channels(json_file : str = "channels.json") -> list[Channel]:
     file.close()
     return channels
 
-def update_channels(channels : list[Channel], json_file : str = "channels.json",) -> None:
+
+
+def update_json(classes_list : list, json_file : str = "channels.json",) -> None:
     """Update since field in the json file for each channel"""
-    channels_len = len(channels)
+    channels_len = len(classes_list)
     file = open(json_file, 'w')
     # Move the fd to th ebegining of the file
     file.seek(0)
@@ -79,7 +81,7 @@ def update_channels(channels : list[Channel], json_file : str = "channels.json",
     file.truncate()
     file.write(r'[')
     for index in range(channels_len):
-        file.write(channels[index].json())
+        file.write(classes_list[index].json())
         # to skip writting of ',' for the last channel
         if index == (channels_len - 1):
             continue
@@ -123,13 +125,13 @@ def main():
                 
         except KeyboardInterrupt:                        
             log.info("Updating channels in json file.")     
-            update_channels(channels)
+            update_json(channels)
             
             log.info("\n[Exiting] Keyboard interupt.")
             sys.exit(1)
         except Exception as exp:
             log.info(f'An Exception occurend {exp.with_traceback}. Cause : {exp.__cause__}\n Updating Channels and retrying from main().')
-            update_channels(channels)
+            update_json(channels)
             main()
 
 

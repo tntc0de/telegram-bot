@@ -1,3 +1,4 @@
+from globals import orjson
 from pydantic_sqlalchemy import sqlalchemy_to_pydantic
 from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer
@@ -50,11 +51,23 @@ PrivateChat = sqlalchemy_to_pydantic(DBPrivateCHat)
 
 DBSetup.create_all()
 
+def read_chats(json_file : str = "public-chats.json") -> list[PublicChat]:
+    """Used to read json file that holds all channels data to get tweets"""
+    file = open(json_file, "r")
+    public_chats = list(map(PublicChat.parse_obj ,[i for i in orjson.loads(file.read())]))
+    file.close()
+    return public_chats
+
 class Database:
     def __init__(self, base = DBSetup.BASE , engine= DBSetup.ENGINE):        
         self._session = scoped_session(sessionmaker(bind= engine))
         self._db  : Session = self._session()
         
+        _public_chats = read_chats()
+        for i in _public_chats:
+            _chat = self.get_public_chat(i.chat_id)
+            if _chat is None:
+                self.add_public_chats(_chat)  
         self.logger = getLogger(__name__)
         
     def get_admins(self):
@@ -93,11 +106,15 @@ class Database:
         _public_chats = []
         
         for i in self._db.query(DBPublicChat).all():
-            _public_chats.append(i)
+            _public_chats.append(PublicChat.from_orm(i))
             
         return _public_chats
     
-    def add_public_chat(self, public_chat : PublicChat):
+    def get_public_chat(self, chat_id):
+        return self._db.query(DBPublicChat).get(chat_id)
+            
+   
+    def add_public_chats(self, public_chat : PublicChat):
         try:
             _public_chat = DBPublicChat(chat_id=public_chat.chat_id, username=public_chat.username, title=public_chat.title, type=public_chat.type)
             
@@ -108,6 +125,7 @@ class Database:
                 "Failed to save data in the database.\nLogging exception: ",
                 exc_info=excp,
             )
+    
         
     def get_private_chats(self):
         _private_chats = []

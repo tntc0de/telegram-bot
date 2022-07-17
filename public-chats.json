@@ -1,0 +1,14 @@
+[
+    {
+        "chat_id": "-1001648987681",
+        "type": 0,
+        "username": "terterochan",
+        "title": "Test Channel"
+    },
+    {
+        "chat_id": "-1001774068106",
+        "type": 1,
+        "username": "terterotest",
+        "title": "Test Group"
+    }
+]
