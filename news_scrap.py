@@ -166,6 +166,7 @@ def main():
     while True:
         try:
             for i in range(len(CHANNELS)):
+                print(f'Number of channels {len(CHANNELS)}')
                 tweets = []
                 CONFIG.Username = CHANNELS[i].username
                 CONFIG.Since = CHANNELS[i].sinceStr()
@@ -176,6 +177,7 @@ def main():
                 tweets_len = len(tweets)
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
                 for index in range(tweets_len):
+                    print(f'in publish section loop')
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
                     date = datetime.strptime(tweets[index].datetime.replace(" +03", ""), DATE_FORMATE)   
                     if CHANNELS[i].since < date:
@@ -187,13 +189,14 @@ def main():
                         video_url = None
                     
                     LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
+                    
         except KeyboardInterrupt:                        
             update_json(CHANNELS)
             
             sys.exit(1)
         except Exception as exp:
             update_json(CHANNELS)
-            
+            print(f'Exception ocurred: {exp.__cause__}, Traceback : {exp.__traceback__}')
             continue
 
         #1 min until next exection   
