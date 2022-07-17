@@ -10,7 +10,7 @@ import orjson
 
 
 class DBSetup:
-    DB_URL =  "postgresql://hadus:toor@localhost:5432/newsbot_db"
+    DB_URL =  "postgres://hadus:toor@localhost:5432/newsbot_db"
     BASE = declarative_base()
     ENGINE = create_engine(DB_URL)
     
