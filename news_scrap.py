@@ -15,12 +15,7 @@ import traceback
 
 
 
-DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
 
-BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
-print('Trying to send message to channels')
-BOT.send_message(chat_id="-1001648987681", text='Hello Friends')
-BOT.send_message(chat_id="-1001774068106", text='Hello Friends')
 
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
@@ -94,6 +89,12 @@ CHANNELS = read_channels()
 LOOP = asyncio.new_event_loop()
 CHANNELS_HASHES = set(['#الحدث', "#الحدث_اليمن"])
 CONFIG = twint.Config()
+DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
+
+BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
+print('Trying to send message to channels')
+LOOP.run_until_complete( BOT.send_message(chat_id="-1001648987681", text='Hello Friends'))
+LOOP.run_until_complete( BOT.send_message(chat_id="-1001774068106", text='Hello Friends'))
 
 
 
@@ -178,8 +179,8 @@ def main():
                 tweets_len = len(tweets)
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
                 for index in range(tweets_len):
-                    print(f'in publish section loop')
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
+                    print(tweets[index].datetime)
                     date = datetime.strptime(tweets[index].datetime.replace(" +03", ""), DATE_FORMATE)   
                     if CHANNELS[i].since < date:
                         CHANNELS[i].since = date +timedelta(minutes=2)
