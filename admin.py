@@ -1,4 +1,5 @@
 
+import os
 from database import db, Admin
 
 from functools import wraps
@@ -10,7 +11,10 @@ from telegram.ext import ApplicationBuilder, CommandHandler, filters, ContextTyp
 
 
 
-BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
+TOKEN = "5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA"
+PORT = int(os.environ.get('PORT', '8443'))
+
+BOT = Bot(TOKEN)
 ADMINS = db.get_admins()
 PUBLIC_CHATS = db.get_public_chats()
 
@@ -97,15 +101,7 @@ def test():
     application = ApplicationBuilder().token('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA').connect_timeout(
         30).get_updates_connect_timeout(30).read_timeout(30).get_updates_read_timeout(30).write_timeout(30).get_updates_write_timeout(30).build()
    
-    # new_member_hand = MessageHandler(
-    #     filters=filters.StatusUpdate.NEW_CHAT_MEMBERS, callback=new_member)
-    # is_new_channel_hand = MessageHandler(filters=filters.ChatType.CHANNEL , callback=is_new)
 
-    # application.add_handler(activate_hand)
-    # application.add_handler(add_admin_hand)
-    # application.add_handler(new_member_hand)
-    # application.add_handler(all_groups_hand)
-    # application.add_handler(is_new_channel_hand)
     role_handlers = CommandHandler('role', role, filters.ChatType.PRIVATE | filters.ChatType.GROUPS)
     cove_handler = ConversationHandler(
         entry_points=[CommandHandler('tokal', tokal)],
@@ -125,7 +121,14 @@ def test():
     
     
 
-    application.run_polling()
+
+    # add handlers
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url="https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN
+    )
 
 if __name__ == '__main__':
     test()
