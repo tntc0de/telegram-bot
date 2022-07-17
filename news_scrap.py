@@ -2,19 +2,56 @@
 
 import sys
 from time import sleep
-from telegram import InputMediaPhoto, InputMediaVideo
+from telegram import InputMediaPhoto, InputMediaVideo, Bot
 from telegram.constants import ParseMode
-
+from pydantic import BaseModel as PyBaseModel
 import twint
 from datetime import datetime, timedelta
-from globals import BOT, DATE_FORMATE, PUBLIC_CHATS, BaseModel, get_video_url, orjson
 import asyncio
-
+import subprocess
+import orjson
 from utils import normalize_tweet
 
 
 
+DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
 
+BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
+
+def date_to_str(obj):
+    """Convert datetime obj to specifice str formate"""
+    if isinstance(obj, datetime):
+        return obj.strftime(DATE_FORMATE)
+    raise TypeError
+    
+    
+def orjson_dumps(v, *, default=None):
+    """
+    Change the default deserilization of orjson.
+    Instead of default deserilization of datetime obj to str with utc. We used date_to_str function.
+    """
+    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
+    return orjson.dumps(v,default=date_to_str, option=orjson.OPT_PASSTHROUGH_DATETIME,).decode()
+
+class BaseModel(PyBaseModel):
+    """Class define shared config"""
+    class Config:
+        #Strip any whitrspace in str
+        anystr_strip_whitespace = True
+        #Use custome functoin to load json str instead of json.loads
+        json_loads = orjson.loads 
+        json_dumps = orjson_dumps
+        
+        
+
+def get_video_url(tweet_link : str):
+    process = subprocess.Popen(['youtube-dl', '--get-url', tweet_link],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if len(stdout.decode('utf-8')) <=1:
+        return None
+    return stdout.decode('utf-8')
 
         
 class Channel(BaseModel):
@@ -24,6 +61,24 @@ class Channel(BaseModel):
     
     def sinceStr(self):
         return self.since.strftime(DATE_FORMATE)
+    
+class PublicChat(BaseModel):
+    
+    chat_id : str
+    title : str    
+    username: str
+    type : int
+    
+
+
+def read_chats(json_file : str = "public-chats.json") -> list[PublicChat]:
+    """Used to read json file that holds all channels data to get tweets"""
+    file = open(json_file, "r")
+    public_chats = list(map(PublicChat.parse_obj ,[i for i in orjson.loads(file.read())]))
+    file.close()
+    return public_chats
+
+PUBLIC_CHATS = read_chats()
     
         
 async def publish(tweet, photos_urls, video_url):
@@ -61,7 +116,6 @@ def read_channels(json_file : str = "channels.json") -> list[Channel]:
     channels = list(map(Channel.parse_obj ,[i for i in orjson.loads(file.read())]))
     file.close()
     return channels
-
 
 
 def update_json(classes_list : list, json_file : str = "channels.json",) -> None:
