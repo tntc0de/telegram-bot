@@ -17,8 +17,10 @@ import re
 DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
 
 BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
+print('Trying to send message to channels')
+BOT.send_message(chat_id="-1001648987681", text='Hello Friends')
+BOT.send_message(chat_id="-1001774068106", text='Hello Friends')
 
-BOT.send_message(chat_id="-1001648987681", text='try')
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
     if isinstance(obj, datetime):
@@ -110,6 +112,7 @@ def normalize_tweet(text):
     return remove_urls(remove_channel_hash(text))
      
 async def publish(tweet, photos_urls, video_url):
+    print('Trying to publish tweets')
     tw = normalize_tweet(tweet.tweet)
     num_photos = len(photos_urls)
     media_group = []
@@ -172,7 +175,7 @@ def main():
                 twint.run.Search(CONFIG)
                 tweets_len = len(tweets)
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
-                for index in range():
+                for index in range(tweets_len):
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
                     date = datetime.strptime(tweets[index].datetime.replace(" +03", ""), DATE_FORMATE)   
                     if CHANNELS[i].since < date:
@@ -184,12 +187,6 @@ def main():
                         video_url = None
                     
                     LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
-
-            #1 min until next exection   
-            print('Sleeping for 1 min')   
-            sleep(60)
-            
-                
         except KeyboardInterrupt:                        
             update_json(CHANNELS)
             
@@ -199,6 +196,12 @@ def main():
             
             continue
 
+        #1 min until next exection   
+        print('Sleeping for 1 min')   
+        sleep(60)
+            
+                
+        
 
 if __name__ == '__main__':
     main()
