@@ -1,33 +1,21 @@
 #!/usr/bin/env python3
 
-from email.mime import application
-import os
 import sys
 from time import sleep
-from telegram import Bot, InputMediaPhoto, InputMediaVideo
-from telegram.ext import ApplicationBuilder
+from telegram import InputMediaPhoto, InputMediaVideo
 from telegram.constants import ParseMode
 
 import twint
 from datetime import datetime, timedelta
-from globals import  DATE_FORMATE, PUBLIC_CHATS, BaseModel, get_video_url, orjson
+from globals import BOT, DATE_FORMATE, PUBLIC_CHATS, BaseModel, get_video_url, orjson
 import asyncio
 
 from utils import normalize_tweet
 
 
 
-TOKEN = "5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA"
-PORT = int(os.environ.get('PORT', '8443'))
 
-app = ApplicationBuilder().token('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA').build()
 
-app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TOKEN,
-        webhook_url="https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN
-    )
         
 class Channel(BaseModel):
     
@@ -49,7 +37,7 @@ async def publish(tweet, photos_urls, video_url):
     try:
         if num_photos == 0 and  video_url is None:
             for i in PUBLIC_CHATS:
-                await app.bot.send_message(chat_id=i.chat_id, text=message, parse_mode=ParseMode.HTML)
+                await BOT.send_message(chat_id=i.chat_id, text=message, parse_mode=ParseMode.HTML)
         else:
             caption_embeded = False
             if video_url is not None:
@@ -60,7 +48,7 @@ async def publish(tweet, photos_urls, video_url):
                     media_group.append(InputMediaPhoto(photos_urls[i], caption= message if not caption_embeded and i ==0 else '' , parse_mode = ParseMode.HTML if not caption_embeded and i ==0  else ''))
 
             for i in PUBLIC_CHATS:
-                await app.send_media_group(chat_id=i.chat_id, media= media_group)
+                await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
         
     except Exception as exp:
         pass
