@@ -16,7 +16,6 @@ TOKEN = "5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA"
 PORT = int(os.environ.get('PORT', '8443'))
 
 BOT = Bot(TOKEN)
-asyncio.new_event_loop().run_until_complete(BOT.set_webhook("https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN))
 
 ADMINS = db.get_admins()
 PUBLIC_CHATS = db.get_public_chats()
