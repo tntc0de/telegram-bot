@@ -11,6 +11,7 @@ import asyncio
 import subprocess
 import orjson
 import re
+import traceback
 
 
 
@@ -190,13 +191,14 @@ def main():
                     
                     LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
                     
-        except KeyboardInterrupt:                        
+        except KeyboardInterrupt:                       
             update_json(CHANNELS)
+
             
             sys.exit(1)
         except Exception as exp:
             update_json(CHANNELS)
-            print(f'Exception ocurred: {exp.__cause__}, Traceback : {exp.__traceback__}')
+            print(f'Exception ocurred: {exp.__cause__}, Traceback : {traceback.format_exc()}')
             continue
 
         #1 min until next exection   
