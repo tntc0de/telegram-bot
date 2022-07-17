@@ -1,2 +1,2 @@
 web: python admin.py
-web: python news_scrap.py
+wroker: python news_scrap.py
