@@ -1,1 +1,1 @@
-web: python news_scrap.py
+wroker: python news_scrap.py
