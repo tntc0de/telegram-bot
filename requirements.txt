@@ -1,0 +1,8 @@
+orjson==3.7.7
+pydantic==1.9.1
+pydantic_sqlalchemy==0.0.9
+python_telegram_bot==20.0a1
+SQLAlchemy==1.4.37
+telegram==0.0.1
+tg.devtools==2.4.3
+twint==2.1.21

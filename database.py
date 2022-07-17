@@ -1,4 +1,3 @@
-from globals import orjson
 from pydantic_sqlalchemy import sqlalchemy_to_pydantic
 from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer
@@ -6,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session
 from logging import getLogger
 
-
+import orjson
 
 
 
