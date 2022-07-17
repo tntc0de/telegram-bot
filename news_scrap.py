@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import asyncio
 import subprocess
 import orjson
-from utils import normalize_tweet
+import re
 
 
 
@@ -18,6 +18,7 @@ DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
 
 BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
 
+BOT.send_message(chat_id="-1001648987681", text='try')
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
     if isinstance(obj, datetime):
@@ -78,9 +79,36 @@ def read_chats(json_file : str = "public-chats.json") -> list[PublicChat]:
     file.close()
     return public_chats
 
+def read_channels(json_file : str = "channels.json") -> list[Channel]:
+    """Used to read json file that holds all channels data to get tweets"""
+    file = open(json_file, "r")
+    channels = list(map(Channel.parse_obj ,[i for i in orjson.loads(file.read())]))
+    file.close()
+    return channels
+
 PUBLIC_CHATS = read_chats()
-    
+CHANNELS = read_channels()
+LOOP = asyncio.new_event_loop()
+CHANNELS_HASHES = set(['#الحدث', "#الحدث_اليمن"])
+CONFIG = twint.Config()
+
+
+
+
+def remove_urls(text : str):
+    return re.sub(r'(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])', '', text, flags=re.MULTILINE)
+
+
+def remove_channel_hash(text):
+    for i in CHANNELS_HASHES :
+        text = re.sub(i, "", text)
         
+    return text
+
+
+def normalize_tweet(text):
+    return remove_urls(remove_channel_hash(text))
+     
 async def publish(tweet, photos_urls, video_url):
     tw = normalize_tweet(tweet.tweet)
     num_photos = len(photos_urls)
@@ -106,16 +134,11 @@ async def publish(tweet, photos_urls, video_url):
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
         
     except Exception as exp:
-        pass
+        print(f'Exception ocurred: {exp.__cause__}, Traceback : {exp.__traceback__}')
         
 
   
-def read_channels(json_file : str = "channels.json") -> list[Channel]:
-    """Used to read json file that holds all channels data to get tweets"""
-    file = open(json_file, "r")
-    channels = list(map(Channel.parse_obj ,[i for i in orjson.loads(file.read())]))
-    file.close()
-    return channels
+
 
 
 def update_json(classes_list : list, json_file : str = "channels.json",) -> None:
@@ -137,44 +160,44 @@ def update_json(classes_list : list, json_file : str = "channels.json",) -> None
     
           
 def main():
-    conf = twint.Config()
-    loop = asyncio.new_event_loop()
-    channels = read_channels()
-
     while True:
         try:
-            for i in range(len(channels)):
+            for i in range(len(CHANNELS)):
                 tweets = []
-                conf.Username = channels[i].username
-                conf.Since = channels[i].sinceStr()
-                conf.Store_object = True
-                conf.Store_object_tweets_list = tweets
-                conf.Hide_output = True
-                twint.run.Search(conf)
-                for index in range(len(tweets)):
+                CONFIG.Username = CHANNELS[i].username
+                CONFIG.Since = CHANNELS[i].sinceStr()
+                CONFIG.Store_object = True
+                CONFIG.Store_object_tweets_list = tweets
+                CONFIG.Hide_output = True
+                twint.run.Search(CONFIG)
+                tweets_len = len(tweets)
+                print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
+                for index in range():
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
                     date = datetime.strptime(tweets[index].datetime.replace(" +03", ""), DATE_FORMATE)   
-                    if channels[i].since < date:
-                        channels[i].since = date +timedelta(minutes=2)
+                    if CHANNELS[i].since < date:
+                        CHANNELS[i].since = date +timedelta(minutes=2)
                     
                     if tweets[index].video:
                         video_url = get_video_url(tweets[index].link)
                     else :
                         video_url = None
                     
-                    loop.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
+                    LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
 
-            #1 min until next exection      
+            #1 min until next exection   
+            print('Sleeping for 1 min')   
             sleep(60)
             
                 
         except KeyboardInterrupt:                        
-            update_json(channels)
+            update_json(CHANNELS)
             
             sys.exit(1)
         except Exception as exp:
-            update_json(channels)
-            main()
+            update_json(CHANNELS)
+            
+            continue
 
 
 if __name__ == '__main__':
