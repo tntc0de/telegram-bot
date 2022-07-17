@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session
-from logging import getLogger
+
 
 import orjson
 
@@ -71,9 +71,8 @@ class Database:
         _public_chats = read_chats()
         for i in _public_chats:
             _chat = self.get_public_chat(i.chat_id)
-            if _chat is None:
-                self.add_public_chats(_chat)  
-        self.logger = getLogger(__name__)
+            if _chat is  None:
+                self.add_public_chats(i)  
         
     def get_admins(self):
         _admins = []
@@ -89,10 +88,7 @@ class Database:
             self._db.add(_admin)
         except Exception as excp:  # pylint: disable=W0703
             self._db.close()
-            self.logger.error(
-                "Failed to save data in the database.\nLogging exception: ",
-                exc_info=excp,
-            )
+
             
         
     def delete_admin(self,chat_id):
@@ -102,10 +98,7 @@ class Database:
             
         except Exception as excp:  # pylint: disable=W0703
             self._db.close()
-            self.logger.error(
-                "Failed to save data in the database.\nLogging exception: ",
-                exc_info=excp,
-            )
+  
         
     def get_public_chats(self):
         _public_chats = []
@@ -126,10 +119,7 @@ class Database:
             self._db.add(_public_chat)
         except Exception as excp:  # pylint: disable=W0703
             self._db.close()
-            self.logger.error(
-                "Failed to save data in the database.\nLogging exception: ",
-                exc_info=excp,
-            )
+
     
         
     def get_private_chats(self):
@@ -147,10 +137,7 @@ class Database:
             self._db.add(_private_chat)
         except Exception as excp:  # pylint: disable=W0703
             self._db.close()
-            self.logger.error(
-                "Failed to save data in the database.\nLogging exception: ",
-                exc_info=excp,
-            )
+  
         
     def commit(self):
         self._db.commit()
