@@ -5,4 +5,4 @@ python_telegram_bot==20.0a1
 SQLAlchemy==1.4.37
 telegram==0.0.1
 tg.devtools==2.4.3
-twint==2.1.21
+twint @ git+https://github.com/twintproject/twint.git@e7c8a0c764f6879188e5c21e25fb6f1f856a7221
