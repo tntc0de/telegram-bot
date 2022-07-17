@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import logging
 import sys
 from time import sleep
 from telegram import InputMediaPhoto, InputMediaVideo
@@ -12,13 +11,7 @@ from globals import BOT, DATE_FORMATE, PUBLIC_CHATS, BaseModel, get_video_url, o
 import asyncio
 
 from utils import normalize_tweet
-# Configuratoin of the logger
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-# Logger
-log = logging.getLogger(__name__)
+
 
 
 
@@ -58,7 +51,7 @@ async def publish(tweet, photos_urls, video_url):
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
         
     except Exception as exp:
-        log.error(f'Error: An exception occured while publishing posts.\n Exception : {exp}\n Traceback : {exp.__context__}' )
+        pass
         
 
   
@@ -90,7 +83,6 @@ def update_json(classes_list : list, json_file : str = "channels.json",) -> None
     
           
 def main():
-    log.info("Reading channels data from json.")
     conf = twint.Config()
     loop = asyncio.new_event_loop()
     channels = read_channels()
@@ -119,18 +111,14 @@ def main():
                     loop.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
 
             #1 min until next exection      
-            log.info("Sleeping for 1 min.")      
             sleep(60)
             
                 
         except KeyboardInterrupt:                        
-            log.info("Updating channels in json file.")     
             update_json(channels)
             
-            log.info("\n[Exiting] Keyboard interupt.")
             sys.exit(1)
         except Exception as exp:
-            log.info(f'An Exception occurend {exp.with_traceback}. Cause : {exp.__cause__}\n Updating Channels and retrying from main().')
             update_json(channels)
             main()
 

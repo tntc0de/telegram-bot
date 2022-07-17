@@ -2,22 +2,12 @@
 from database import db, Admin
 
 from functools import wraps
-import logging
 
 from telegram.constants import ParseMode
 from telegram import Bot, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, filters, ContextTypes , ConversationHandler, MessageHandler
-from devtools import debug
 
 
-
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-
-logger = logging.getLogger(__name__)
 
 
 BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
@@ -31,17 +21,13 @@ def super_restriction(func):
         user = Admin(chat_id = update.effective_user.id,username=update.effective_user.username, name=update.effective_user.full_name)
         exists = [i for i in ADMINS if i.chat_id == user.chat_id]
         if len(exists)==0 or exists == None:
-            logger.warning(f'Unauthorized access denied for {user.chat_id}.')
             return
         return await func(update, context, *args, **kwargs)
     return wrapped
 
 
 @super_restriction
-async def role(update : Update, context:ContextTypes.DEFAULT_TYPE):
-    debug(update.effective_chat.to_json())
-    debug(update.effective_message.to_json())
-    
+async def role(update : Update, context:ContextTypes.DEFAULT_TYPE):    
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Welcome {update.effective_chat.full_name} : You\'r admin.')
     
 
@@ -49,7 +35,6 @@ async def role(update : Update, context:ContextTypes.DEFAULT_TYPE):
 
 @super_restriction
 async def tokal(update : Update , context : ContextTypes.DEFAULT_TYPE):
-    " التاكيد علئ العملية"
     await update.message.reply_text(
         "  ادخل رمز التاكيد لمتابعة العملية"
     )
@@ -96,7 +81,6 @@ async def basm_allah(update : Update, context : ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
        
     else :
-        logger.warning(f'Message does not containe  a photo nor a document')
         return ConversationHandler.END
 
     
