@@ -15,6 +15,8 @@ TOKEN = "5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA"
 PORT = int(os.environ.get('PORT', '8443'))
 
 BOT = Bot(TOKEN)
+BOT.set_webhook("https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN)
+
 ADMINS = db.get_admins()
 PUBLIC_CHATS = db.get_public_chats()
 
@@ -98,9 +100,7 @@ async def end(update : Update, context : ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 def test():
-    application = ApplicationBuilder().token('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA').connect_timeout(
-        30).get_updates_connect_timeout(30).read_timeout(30).get_updates_read_timeout(30).write_timeout(30).get_updates_write_timeout(30).build()
-   
+    application = ApplicationBuilder().bot(BOT).build()
 
     role_handlers = CommandHandler('role', role, filters.ChatType.PRIVATE | filters.ChatType.GROUPS)
     cove_handler = ConversationHandler(
@@ -129,6 +129,7 @@ def test():
         url_path=TOKEN,
         webhook_url="https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN
     )
+    
 
 if __name__ == '__main__':
     test()
