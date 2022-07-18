@@ -40,7 +40,7 @@ class BaseModel(PyBaseModel):
         anystr_strip_whitespace = True
         #Use custome functoin to load json str instead of json.loads
         json_loads = orjson.loads 
-        json_dumps = orjson.dumps
+        json_dumps = orjson_dumps
         
         
 
