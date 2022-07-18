@@ -182,7 +182,8 @@ def main():
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
                     date = datetime.strptime(tweets[index].datetime, DATE_FORMATE)   
                     if CHANNELS[i].since < date:
-                        CHANNELS[i].since = date +timedelta(minutes=2)
+                        date = date +timedelta(minutes=1)
+                        CHANNELS[i].since = datetime.strftime(DATE_FORMATE.replace('%Z',''))
                     
                     if tweets[index].video:
                         video_url = get_video_url(tweets[index].link)
