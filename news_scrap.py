@@ -16,6 +16,7 @@ import traceback
 
 
 
+DATE_FORMATE = "%Y-%m-%d %H:%M:%S %Z"
 
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
@@ -39,7 +40,7 @@ class BaseModel(PyBaseModel):
         anystr_strip_whitespace = True
         #Use custome functoin to load json str instead of json.loads
         json_loads = orjson.loads 
-        json_dumps = orjson_dumps
+        json_dumps = orjson.dumps
         
         
 
@@ -56,10 +57,10 @@ def get_video_url(tweet_link : str):
 class Channel(BaseModel):
     
     username : str
-    since : datetime    
+    since : str    
     
-    def sinceStr(self):
-        return self.since.strftime(DATE_FORMATE)
+    # def sinceStr(self):
+    #     return self.since.strftime(DATE_FORMATE.replace(' %Z',''))
     
 class PublicChat(BaseModel):
     
@@ -89,15 +90,8 @@ CHANNELS = read_channels()
 LOOP = asyncio.new_event_loop()
 CHANNELS_HASHES = set(['#الحدث', "#الحدث_اليمن"])
 CONFIG = twint.Config()
-DATE_FORMATE = "%Y-%m-%d %H:%M:%S %Z"
 
 BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
-print('Trying to send message to channels')
-LOOP.run_until_complete( BOT.send_message(chat_id="-1001648987681", text='Hello Friends'))
-LOOP.run_until_complete( BOT.send_message(chat_id="-1001774068106", text='Hello Friends'))
-
-
-
 
 def remove_urls(text : str):
     return re.sub(r'(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])', '', text, flags=re.MULTILINE)
@@ -168,10 +162,9 @@ def main():
     while True:
         try:
             for i in range(len(CHANNELS)):
-                print(f'Number of channels {len(CHANNELS)}')
                 tweets = []
                 CONFIG.Username = CHANNELS[i].username
-                CONFIG.Since = CHANNELS[i].sinceStr()
+                CONFIG.Since = CHANNELS[i].since.replace(' UTC', '')
                 CONFIG.Store_object = True
                 CONFIG.Store_object_tweets_list = tweets
                 CONFIG.Hide_output = True
@@ -180,10 +173,11 @@ def main():
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
                 for index in range(tweets_len):
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
-                    date = datetime.strptime(tweets[index].datetime, DATE_FORMATE)   
-                    if CHANNELS[i].since < date:
-                        date = date +timedelta(minutes=1)
-                        CHANNELS[i].since = datetime.strftime(DATE_FORMATE.replace('%Z',''))
+                    date_tweet = datetime.strptime(tweets[index].datetime, DATE_FORMATE)
+                    since_date =  datetime.strptime(CHANNELS[i].since, DATE_FORMATE)
+                    if since_date < date_tweet:
+                        date_tweet = date_tweet +timedelta(minutes=1)
+                        CHANNELS[i].since = date_tweet.strftime(DATE_FORMATE)
                     
                     if tweets[index].video:
                         video_url = get_video_url(tweets[index].link)
@@ -200,6 +194,8 @@ def main():
         except Exception as exp:
             update_json(CHANNELS)
             print(f'Exception ocurred: {exp.__cause__}, Traceback : {traceback.format_exc()}')
+            print('Sleeping for 1 min after exception')   
+            sleep(60)
             continue
 
         #1 min until next exection   
