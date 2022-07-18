@@ -89,7 +89,7 @@ CHANNELS = read_channels()
 LOOP = asyncio.new_event_loop()
 CHANNELS_HASHES = set(['#الحدث', "#الحدث_اليمن"])
 CONFIG = twint.Config()
-DATE_FORMATE = "%Y-%m-%d %H:%M:%S"
+DATE_FORMATE = "%Y-%m-%d %H:%M:%S %Z"
 
 BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
 print('Trying to send message to channels')
@@ -180,8 +180,7 @@ def main():
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
                 for index in range(tweets_len):
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
-                    print(tweets[index].datetime)
-                    date = datetime.strptime(tweets[index].datetime.replace(" +03", ""), DATE_FORMATE)   
+                    date = datetime.strptime(tweets[index].datetime, DATE_FORMATE)   
                     if CHANNELS[i].since < date:
                         CHANNELS[i].since = date +timedelta(minutes=2)
                     
