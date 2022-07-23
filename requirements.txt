@@ -1,8 +1,9 @@
-orjson==3.7.7
+orjson==3.7.8
 pydantic==1.9.1
 pydantic_sqlalchemy==0.0.9
 python_telegram_bot==20.0a1
+pytz==2022.1
 SQLAlchemy==1.4.37
 telegram==0.0.1
-psycopg2==2.9.3
 twint @ git+https://github.com/twintproject/twint.git@e7c8a0c764f6879188e5c21e25fb6f1f856a7221
+youtube_dl==2021.12.17
