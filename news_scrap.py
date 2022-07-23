@@ -2,9 +2,10 @@
 
 import sys
 from time import sleep
+import pytz
 from telegram import InputMediaPhoto, InputMediaVideo, Bot
 from telegram.constants import ParseMode
-from pydantic import BaseModel as PyBaseModel
+from pydantic import BaseModel as PyBaseModel, ValidationError, validator
 import twint
 from datetime import datetime, timedelta
 import asyncio
@@ -13,16 +14,55 @@ import orjson
 import re
 import traceback
 
+import youtube_dl as YDL
 
 
 
-DATE_FORMATE = "%Y-%m-%d %H:%M:%S %Z"
 
+DATE_FORMATE_TIMEZONE_OFFSET = "%Y-%m-%d %H:%M:%S %Z%z"
+DATE_FORMATE_TIMEZONE= "%Y-%m-%d %H:%M:%S %Z"
+DATE_FORMATE= "%Y-%m-%d %H:%M:%S"
+TIMEZONE = pytz.timezone('UTC')
+# Match formate %Y-%m-%d %H:%M:%S
+TIME_REGEX= re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
+# Match formate %Y-%m-%d %H:%M:%S %Z
+TIME_REGEX_TIMEZONE = re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\s[A-Z]{3}$')
+# Match formate %Y-%m-%d %H:%M:%S %Z%z
+TIME_REGEX_TIMEZONE_OFFSET = re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\s[A-Z]{3}\+[0-9]{1,4}$')
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
     if isinstance(obj, datetime):
         return obj.strftime(DATE_FORMATE)
     raise TypeError
+
+def root_date_validator(value):
+    if isinstance(value, str):
+        if re.match(TIME_REGEX, value):
+            return datetime.strptime(value,DATE_FORMATE).astimezone(TIMEZONE)
+        elif re.match(TIME_REGEX_TIMEZONE, value):
+            return datetime.strptime(value, DATE_FORMATE_TIMEZONE).astimezone(TIMEZONE)
+        elif re.match(TIME_REGEX_TIMEZONE_OFFSET, value):
+            return datetime.strptime(value, DATE_FORMATE_TIMEZONE_OFFSET).astimezone(TIMEZONE)
+        else:
+            raise ValueError(f'Can not formate datetime str {value}')
+    elif isinstance(value, datetime):
+        return datetime.astimezone(TIMEZONE)
+    else:
+        raise ValueError(f'Can not parse obj of type {type(value)} to datetime.')
+
+def get_video_url(tweet_link : str):
+
+    try:
+        with YDL:
+            result = YDL.extract_info(
+                tweet_link,
+                download=False # We just want to extract the info
+        )
+            
+        return result['url']
+    except Exception as exp:
+        return None
+
     
     
 def orjson_dumps(v, *, default=None):
@@ -41,29 +81,25 @@ class BaseModel(PyBaseModel):
         #Use custome functoin to load json str instead of json.loads
         json_loads = orjson.loads 
         json_dumps = orjson_dumps
-        
-        
-
-def get_video_url(tweet_link : str):
-    process = subprocess.Popen(['youtube-dl', '--get-url', tweet_link],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    if len(stdout.decode('utf-8')) <=1:
-        return None
-    return stdout.decode('utf-8')
+    
 
         
 class Channel(BaseModel):
     
     username : str
-    since : str    
-    
-    # def sinceStr(self):
-    #     return self.since.strftime(DATE_FORMATE.replace(' %Z',''))
+    since : datetime    
+    def since_str(self):
+        return datetime.strftime(self.since, DATE_FORMATE)
+    @validator('since', pre=True)
+    def date_check(cls,value):
+        try:
+            return root_date_validator(value)
+        except Exception as exp:
+            tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
+            raise ValidationError(f'Exception : {tb_str}')
+        
     
 class PublicChat(BaseModel):
-    
     chat_id : str
     title : str    
     username: str
@@ -133,7 +169,9 @@ async def publish(tweet, photos_urls, video_url):
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
         
     except Exception as exp:
-        print(f'Exception ocurred: {exp.__cause__}, Traceback : {exp.__traceback__}')
+        tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
+
+        print(f'Exception ocurred: {tb_str}')
         
 
   
@@ -164,7 +202,7 @@ def main():
             for i in range(len(CHANNELS)):
                 tweets = []
                 CONFIG.Username = CHANNELS[i].username
-                CONFIG.Since = CHANNELS[i].since.replace(' UTC', '')
+                CONFIG.Since = CHANNELS[i].since_str()
                 CONFIG.Store_object = True
                 CONFIG.Store_object_tweets_list = tweets
                 CONFIG.Hide_output = True
@@ -173,11 +211,10 @@ def main():
                 print(f'Found {tweets_len} tweets from channel : {CHANNELS[i].username}')
                 for index in range(tweets_len):
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
-                    date_tweet = datetime.strptime(tweets[index].datetime, DATE_FORMATE)
-                    since_date =  datetime.strptime(CHANNELS[i].since, DATE_FORMATE)
-                    if since_date < date_tweet:
-                        date_tweet = date_tweet +timedelta(minutes=1)
-                        CHANNELS[i].since = date_tweet.strftime(DATE_FORMATE)
+                    date_tweet = root_date_validator(tweets[index].datetime).astimezone(TIMEZONE)
+                    if CHANNELS[i].since < date_tweet:
+                        CHANNELS[i].since = date_tweet + timedelta(seconds=10)
+
                     
                     if tweets[index].video:
                         video_url = get_video_url(tweets[index].link)
@@ -187,15 +224,13 @@ def main():
                     LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
                     
         except KeyboardInterrupt:                       
-            update_json(CHANNELS)
-
-            
+            #update_json(CHANNELS) 
             sys.exit(1)
         except Exception as exp:
             update_json(CHANNELS)
             print(f'Exception ocurred: {exp.__cause__}, Traceback : {traceback.format_exc()}')
-            print('Sleeping for 1 min after exception')   
-            sleep(60)
+            print('Sleeping for 5 sec after exception')   
+            sleep(5)
             continue
 
         #1 min until next exection   
