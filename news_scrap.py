@@ -15,6 +15,7 @@ import re
 import traceback
 
 import youtube_dl as YDL
+from telegram.error import RetryAfter
 
 
 
@@ -148,26 +149,30 @@ async def publish(tweet, photos_urls, video_url):
     tw = normalize_tweet(tweet.tweet)
     num_photos = len(photos_urls)
     media_group = []
-    message = (
-        f'<strong>{tweet.name}</strong>\n'
-        f'{tw}'
-    )
+    # message = (
+    #     f'<strong>{tweet.name}</strong>\n'
+    #     f'{tw}'
+    # )
     try:
         if num_photos == 0 and  video_url is None:
             for i in PUBLIC_CHATS:
-                await BOT.send_message(chat_id=i.chat_id, text=message, parse_mode=ParseMode.HTML)
+                await BOT.send_message(chat_id=i.chat_id, text=tw)
         else:
             caption_embeded = False
             if video_url is not None:
                 caption_embeded = True
-                media_group.append(InputMediaVideo(video_url, caption= message , parse_mode = ParseMode.HTML))
+                media_group.append(InputMediaVideo(video_url, caption= tw , parse_mode = ParseMode.HTML))
             if num_photos > 0:
                 for i in range(num_photos):
-                    media_group.append(InputMediaPhoto(photos_urls[i], caption= message if not caption_embeded and i ==0 else '' , parse_mode = ParseMode.HTML if not caption_embeded and i ==0  else ''))
+                    media_group.append(InputMediaPhoto(photos_urls[i], caption= tw if not caption_embeded and i ==0 else '' , parse_mode = ParseMode.HTML if not caption_embeded and i ==0  else ''))
 
-            for i in PUBLIC_CHATS:
+            for i in PUBLIC_CHATS: 
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
-        
+    except RetryAfter as exp:
+        tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
+        delay = int(re.findall((r'\d'), tb_str[-1]))
+        print(f'Delay for {delay} seconds')
+        sleep(delay)           
     except Exception as exp:
         tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
 
