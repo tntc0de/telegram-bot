@@ -8,11 +8,13 @@ from sqlalchemy.orm import sessionmaker, Session, scoped_session
 
 import orjson
 
-#uri = "postgresql://hadus:toor@localhost:5432/newsbot_db"
 uri = os.getenv("DATABASE_URL")
 print(uri)
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://")
+if uri is None:
+    uri = "postgresql://hadus:toor@localhost:5432/newsbot_db"
+else:
+    if uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://")
 
 
 class DBSetup:

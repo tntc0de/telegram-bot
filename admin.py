@@ -1,5 +1,7 @@
 
 import asyncio
+import html
+import json
 import os
 from database import db, Admin
 
@@ -12,13 +14,13 @@ from telegram.ext import ApplicationBuilder, CommandHandler, filters, ContextTyp
 
 
 
-TOKEN = "5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA"
+TOKEN = "5594860872:AAFpcI7yG5uMCTQst00e1jS4UwNaMozhzus"
 PORT = int(os.environ.get('PORT', '8443'))
 
-BOT = Bot(TOKEN)
 
 ADMINS = db.get_admins()
 PUBLIC_CHATS = db.get_public_chats()
+AMDIN = '1345337405'
 
 AUTHENTICATE, BASM_ALLAH = range(2) 
 def super_restriction(func):
@@ -90,7 +92,25 @@ async def basm_allah(update : Update, context : ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     
+async def messages(update: Update, context : ContextTypes.DEFAULT_TYPE):
+    
+    update_str = update.to_dict() if isinstance(update, Update) else str(update)
+
+    admins = await update.effective_chat.get_administrators()
+    is_admin = [x for x in admins if x.user.id == context.bot.id]
+    
+    message = (
+        f"is Admin : {is_admin is not None}\n"
+        f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+        "</pre>\n\n"
+        f"<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n"
+        f"<pre>context.user_data = {html.escape(str(context.user_data))}</pre>\n\n"
+    )
                 
+     # Finally, send the message
+    await context.bot.send_message(
+        chat_id=AMDIN, text=message, parse_mode=ParseMode.HTML
+    )
                 
 async def end(update : Update, context : ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -100,9 +120,12 @@ async def end(update : Update, context : ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 def test():
-    application = ApplicationBuilder().bot(BOT).build()
+    
+    application = ApplicationBuilder().token(TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).build()
 
     role_handlers = CommandHandler('role', role, filters.ChatType.PRIVATE | filters.ChatType.GROUPS)
+    message_handlres = MessageHandler(filters= filters.ChatType.GROUPS | filters.ChatType.CHANNEL, callback= messages)
+
     cove_handler = ConversationHandler(
         entry_points=[CommandHandler('tokal', tokal)],
         states={
@@ -116,6 +139,7 @@ def test():
         },
         fallbacks=[CommandHandler('end', end)]
     )
+    application.add_handler(message_handlres)
     application.add_handler(role_handlers)
     application.add_handler(cove_handler)
     
@@ -123,13 +147,11 @@ def test():
 
 
     # add handlers
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TOKEN,
-        webhook_url="https://telegram-bot-tweet-scrapper.herokuapp.com/" + TOKEN
-    )
+    application.run_polling()
     
 
 if __name__ == '__main__':
     test()
+    
+
+

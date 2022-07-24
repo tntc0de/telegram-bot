@@ -128,7 +128,7 @@ LOOP = asyncio.new_event_loop()
 CHANNELS_HASHES = set(['#الحدث', "#الحدث_اليمن"])
 CONFIG = twint.Config()
 
-BOT = Bot('5594405619:AAGIZI-hF0IChdvM_GAof-TQepniP0BvCDA')
+BOT = Bot('5594860872:AAFpcI7yG5uMCTQst00e1jS4UwNaMozhzus')
 
 def remove_urls(text : str):
     return re.sub(r'(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])', '', text, flags=re.MULTILINE)
