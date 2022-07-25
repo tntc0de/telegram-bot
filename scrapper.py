@@ -30,6 +30,11 @@ TIME_REGEX= re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-
 TIME_REGEX_TIMEZONE = re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\s[A-Z]{3}$')
 # Match formate %Y-%m-%d %H:%M:%S %Z%z
 TIME_REGEX_TIMEZONE_OFFSET = re.compile(r'^[0-9]{4}\-(0?[0-9]|1[0-2])\-([0-2]?[0-9]|3[0-1])\s([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\s[A-Z]{3}\+[0-9]{1,4}$')
+
+#Match hashtag or mentions
+CLEAN_TWEET_REGEX = re.compile(r"([@#][A-Za-z0-9_]+)|((http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-]))")
+
+
 def date_to_str(obj):
     """Convert datetime obj to specifice str formate"""
     if isinstance(obj, datetime):
@@ -130,23 +135,14 @@ CONFIG = twint.Config()
 
 BOT = Bot('5594860872:AAFpcI7yG5uMCTQst00e1jS4UwNaMozhzus')
 
-def remove_urls(text : str):
-    return re.sub(r'(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])', '', text, flags=re.MULTILINE)
 
 
-def remove_channel_hash(text):
-    for i in CHANNELS_HASHES :
-        text = re.sub(i, "", text)
-        
-    return text
-
-
-def normalize_tweet(text):
-    return remove_urls(remove_channel_hash(text))
+def clean_tweet(tweet_str):
+    return re.sub(CLEAN_TWEET_REGEX, '', tweet_str)
      
 async def publish(tweet, photos_urls, video_url):
     print('Trying to publish tweets')
-    tw = normalize_tweet(tweet.tweet)
+    tw = clean_tweet(tweet.tweet)
     num_photos = len(photos_urls)
     media_group = []
     # message = (
@@ -170,7 +166,7 @@ async def publish(tweet, photos_urls, video_url):
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
     except RetryAfter as exp:
         tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
-        delay = int(re.findall((r'\d'), tb_str[-1]))
+        delay = int(re.findall((r'\d'), tb_str)[-1])
         print(f'Delay for {delay} seconds')
         sleep(delay)           
     except Exception as exp:
@@ -209,6 +205,7 @@ def main():
                 CONFIG.Username = CHANNELS[i].username
                 CONFIG.Since = CHANNELS[i].since_str()
                 CONFIG.Store_object = True
+                CONFIG.Media = True
                 CONFIG.Store_object_tweets_list = tweets
                 CONFIG.Hide_output = True
                 twint.run.Search(CONFIG)
