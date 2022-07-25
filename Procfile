@@ -1,1 +1,1 @@
-wroker: python news_scrap.py
+wroker: python scrapper.py
