@@ -2,6 +2,7 @@
 
 import sys
 from time import sleep
+from typing import List, Union
 import pytz
 from telegram import InputMediaPhoto, InputMediaVideo, Bot
 from telegram.constants import ParseMode
@@ -144,7 +145,7 @@ async def publish(tweet, photos_urls, video_url):
     print('Trying to publish tweets')
     tw = clean_tweet(tweet.tweet)
     num_photos = len(photos_urls)
-    media_group = []
+    media_group : List[Union(InputMediaPhoto | InputMediaVideo)] = []
     # message = (
     #     f'<strong>{tweet.name}</strong>\n'
     #     f'{tw}'
@@ -152,7 +153,7 @@ async def publish(tweet, photos_urls, video_url):
     try:
         if num_photos == 0 and  video_url is None:
             for i in PUBLIC_CHATS:
-                await BOT.send_message(chat_id=i.chat_id, text=tw)
+                await BOT.send_message(chat_id=i.chat_id, text=tw + f'\n@{i.username}') 
         else:
             caption_embeded = False
             if video_url is not None:
@@ -161,14 +162,16 @@ async def publish(tweet, photos_urls, video_url):
             if num_photos > 0:
                 for i in range(num_photos):
                     media_group.append(InputMediaPhoto(photos_urls[i], caption= tw if not caption_embeded and i ==0 else '' , parse_mode = ParseMode.HTML if not caption_embeded and i ==0  else ''))
+                    
 
             for i in PUBLIC_CHATS: 
+                if media_group is not None:
+                    media_group[0].caption = tw + f'\n@{i.username}'
                 await BOT.send_media_group(chat_id=i.chat_id, media= media_group)
     except RetryAfter as exp:
         tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
-        delay = int(re.findall((r'\d'), tb_str)[-1])
-        print(f'Delay for {delay} seconds')
-        sleep(delay)           
+        sleep(60)
+        print(f'Sleeping for 1 min because of RetryAfter error.')         
     except Exception as exp:
         tb_str = traceback.format_exception(type(exp), value=exp, tb=exp.__traceback__)
 
@@ -215,7 +218,7 @@ def main():
                     # Parse str to datetime. for compersion. remove +03 to keep with our date_format
                     date_tweet = root_date_validator(tweets[index].datetime).astimezone(TIMEZONE)
                     if CHANNELS[i].since < date_tweet:
-                        CHANNELS[i].since = date_tweet + timedelta(seconds=10)
+                        CHANNELS[i].since = date_tweet + timedelta(seconds=30)
 
                     
                     if tweets[index].video:
@@ -226,7 +229,7 @@ def main():
                     LOOP.run_until_complete(publish(tweet=tweets[index],photos_urls= tweets[index].photos, video_url=video_url))
                     
         except KeyboardInterrupt:                       
-            #update_json(CHANNELS) 
+            update_json(CHANNELS) 
             sys.exit(1)
         except Exception as exp:
             update_json(CHANNELS)
